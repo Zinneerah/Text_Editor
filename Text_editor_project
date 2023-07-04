@@ -1,0 +1,164 @@
+
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox, simpledialog, colorchooser, font
+
+def open_file():
+    try:
+        file_path = filedialog.askopenfilename()
+        if file_path:
+            with open(file_path, 'r') as file:
+                text_editor.delete(1.0, tk.END)
+                text_editor.insert(tk.END, file.read())
+                update_window_title(file_path)  # Update window title
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred while opening the file:\n{str(e)}")
+
+def save_file():
+    file_path = filedialog.asksaveasfilename(defaultextension='.txt')
+    if file_path:
+        with open(file_path, 'w') as file:
+            file.write(text_editor.get(1.0, tk.END))
+            update_window_title(file_path)  # Update window title
+
+def new_file():
+    if text_editor.get("1.0", tk.END) != "\n":
+        response = messagebox.askyesnocancel("Save Changes", "Do you want to save changes before creating a new file?")
+        if response is None:
+            return
+        if response:
+            save_file()
+    text_editor.delete(1.0, tk.END)
+    root.title("Text Editor")  # Reset window title
+
+def save_file_as():
+    file_path = filedialog.asksaveasfilename(defaultextension=".txt")
+    if file_path:
+        with open(file_path, "w") as file:
+            content = text_editor.get(1.0, tk.END)
+            file.write(content)
+            update_window_title(file_path)  # Update window title
+
+def update_window_title(file_path):
+    file_name = file_path.split("/")[-1]  # Extract the file name from the file path
+    root.title(f"Text Editor - {file_name}")
+
+def cut_text(event=None):
+    text_editor.event_generate("<<Cut>>")
+
+def copy_text(event=None):
+    text_editor.event_generate("<<Copy>>")
+
+def paste_text(event=None):
+    text_editor.event_generate("<<Paste>>")
+
+def select_font_style(font_style):
+    current_font.set(font_style)
+    text_editor.configure(font=(current_font.get(), current_font_size.get()))
+
+def change_font_style(event=None):
+    selected_font_style = font_styles_combobox.get()
+    select_font_style(selected_font_style)
+
+def change_font_size(size):
+    current_font_size.set(size)
+    text_editor.configure(font=(current_font.get(), current_font_size.get()))
+
+def change_text_color():
+    color = colorchooser.askcolor()[1]
+    if color:
+        text_editor.configure(fg=color)
+
+def change_bg_color():
+    color = colorchooser.askcolor()[1]
+    if color:
+        text_editor.configure(bg=color)
+
+def show_help():
+    help_info = "Help:\n\n" \
+                "- File: Open and save text files.\n" \
+                "- Edit: Cut, copy, and paste text.\n" \
+                "- Options:\n" \
+                "   - Font Size: Change the size of the font.\n" \
+                "   - Font Style: Change the style of the font.\n" \
+                "   - Text Color: Change the color of the text.\n" \
+                "   - Background Color: Change the background color of the text editor.\n" \
+                "- Help: Display this help information."
+    messagebox.showinfo("Help", help_info)
+
+root = tk.Tk()
+root.title("Text Editor")
+
+current_font = tk.StringVar()
+current_font.set("Arial")
+current_font_size = tk.IntVar()
+current_font_size.set(12)
+
+# Create a Text widget
+text_editor = tk.Text(root)
+text_editor.pack()
+
+# Create a menu bar
+menu_bar = tk.Menu(root)
+root.config(menu=menu_bar)
+
+# Create a File menu
+file_menu = tk.Menu(menu_bar, tearoff=False)
+menu_bar.add_cascade(label="File", menu=file_menu)
+file_menu.add_command(label="New", accelerator="Ctrl+N", command=new_file)
+file_menu.add_command(label="Open", accelerator="Ctrl+O", command=open_file)
+file_menu.add_command(label="Save", accelerator="Ctrl+S", command=save_file)
+file_menu.add_command(label="Save As", accelerator="Ctrl+Shift+S", command=save_file_as)
+file_menu.add_separator()
+file_menu.add_command(label="Exit", accelerator="Alt+F4", command=root.quit)
+
+# Create an Edit menu
+edit_menu = tk.Menu(menu_bar, tearoff=False)
+menu_bar.add_cascade(label="Edit", menu=edit_menu)
+edit_menu.add_command(label="Cut", accelerator="Ctrl+X", command=cut_text)
+edit_menu.add_command(label="Copy", accelerator="Ctrl+C", command=copy_text)
+edit_menu.add_command(label="Paste", accelerator="Ctrl+V", command=paste_text)
+
+# Create an Options menu
+options_menu = tk.Menu(menu_bar, tearoff=False)
+menu_bar.add_cascade(label="Options", menu=options_menu)
+
+# Add font style submenu
+font_styles_menu = tk.Menu(options_menu, tearoff=False)
+options_menu.add_cascade(label="Font Style", menu=font_styles_menu)
+
+# Get all available fonts
+all_fonts = font.families()
+
+# Add font options to the menu
+for font_name in all_fonts:
+    font_styles_menu.add_command(label=font_name, command=lambda name=font_name: select_font_style(name))
+
+# Add font size submenu
+font_sizes_menu = tk.Menu(options_menu, tearoff=False)
+options_menu.add_cascade(label="Font Size", menu=font_sizes_menu)
+
+# Define font sizes
+font_sizes = [8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 48, 56, 64, 72, 80, 96]
+
+# Add font size options to the menu
+for size in font_sizes:
+    font_sizes_menu.add_command(label=size, command=lambda font_size=size: change_font_size(font_size))
+
+options_menu.add_command(label="Text Color", command=change_text_color)
+options_menu.add_command(label="Background Color", command=change_bg_color)
+
+# Create a Help menu
+help_menu = tk.Menu(menu_bar, tearoff=False)
+menu_bar.add_cascade(label="Help", menu=help_menu)
+help_menu.add_command(label="Help", command=show_help)
+
+# Bind keyboard shortcuts
+root.bind("<Control-n>", lambda event: new_file())  # Bind Ctrl+N to new_file()
+root.bind("<Control-o>", lambda event: open_file())  # Bind Ctrl+O to open_file()
+root.bind("<Control-s>", lambda event: save_file())  # Bind Ctrl+S to save_file()
+root.bind("<Control-Shift-s>", lambda event: save_file_as())  # Bind Ctrl+Shift+S to save_file_as()
+root.bind("<Control-x>", lambda event: cut_text())  # Bind Ctrl+X to cut_text()
+root.bind("<Control-c>", lambda event: copy_text())  # Bind Ctrl+C to copy_text()
+root.bind("<Control-v>", lambda event: paste_text())  # Bind Ctrl+V to paste_text()
+
+root.mainloop()
